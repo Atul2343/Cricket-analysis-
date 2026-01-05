@@ -3,7 +3,7 @@ import json
 import requests
 from telegram import Bot
 
-# ----------- Secrets ----------
+# ----------- Secrets -----------
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHANNEL_ID = os.environ.get("CHANNEL_ID")
 CRICKETDATA_API_KEY = os.environ.get("CRICKETDATA_API_KEY")
@@ -14,7 +14,7 @@ if not BOT_TOKEN or not CHANNEL_ID or not CRICKETDATA_API_KEY:
 bot = Bot(BOT_TOKEN)
 print("✅ Secrets loaded successfully")
 
-# ----------- State File for duplicate prevention -----------
+# ----------- State file for duplicate prevention -----------
 STATE_FILE = "posted_matches.json"
 if not os.path.exists(STATE_FILE):
     with open(STATE_FILE, "w") as f:
@@ -27,7 +27,7 @@ def save_state():
     with open(STATE_FILE, "w") as f:
         json.dump(posted, f)
 
-# ----------- Fetch Live Matches -----------
+# ----------- Fetch live matches -----------
 def get_live_matches():
     url = "https://cricketdata.org/api/v1/matches?status=live"
     headers = {"x-api-key": CRICKETDATA_API_KEY}
@@ -39,58 +39,67 @@ def get_live_matches():
         print("Error fetching matches:", e)
         return []
 
-# ----------- Prediction Logic -----------
+# ----------- Advanced AI Prediction Logic -----------
 def predict_match(match):
     match_id = str(match.get("id", "0"))
     team1 = match.get("team1", {}).get("name", "Team1")
     team2 = match.get("team2", {}).get("name", "Team2")
     toss_winner = match.get("toss_winner", team1)
 
-    # First inning data
+    # Inning-wise data
     innings = match.get("innings", [])
     first_inning = innings[0] if innings else {}
     second_inning = innings[1] if len(innings) > 1 else {}
 
-    runs = first_inning.get("runs", 0)
-    wickets = first_inning.get("wickets", 0)
-    overs = first_inning.get("overs", 0)
+    # First inning stats
+    f_runs = first_inning.get("runs", 0)
+    f_wickets = first_inning.get("wickets", 0)
+    f_overs = first_inning.get("overs", 0)
+    f_team = first_inning.get("batting_team", team1)
 
-    if overs > 0:
-        run_rate = runs / overs
+    # Second inning stats (if started)
+    s_runs = second_inning.get("runs", 0)
+    s_wickets = second_inning.get("wickets", 0)
+    s_overs = second_inning.get("overs", 0)
+    s_team = second_inning.get("batting_team", team2)
+
+    # Run rates
+    f_rr = f_runs / f_overs if f_overs > 0 else 0
+    s_rr = s_runs / s_overs if s_overs > 0 else 0
+
+    # Player form (basic simulation)
+    team_strength = {team1: 50, team2: 50}
+    # If first inning lead
+    if f_rr > 6 and f_wickets < 5:
+        team_strength[f_team] += 10
+    # Second inning ongoing
+    if s_overs > 0:
+        team_strength[s_team] += int(s_rr * 2)
+
+    # Predicted winner & confidence
+    if team_strength[team1] > team_strength[team2]:
+        predicted_winner = team1
+        confidence = 50 + (team_strength[team1] - team_strength[team2])
     else:
-        run_rate = 0
-
-    # Confidence calculation
-    confidence = 50
-    if toss_winner == team1:
-        confidence += 5
-    if run_rate > 6:
-        confidence += min(30, run_rate * 5)
-    if wickets < 5:
-        confidence += 10
-
+        predicted_winner = team2
+        confidence = 50 + (team_strength[team2] - team_strength[team1])
     confidence = min(confidence, 95)
-
-    # Predicted winner logic
-    predicted_winner = toss_winner
-    if overs > 0:
-        if run_rate > 6 and wickets < 5:
-            predicted_winner = first_inning.get("batting_team", team1)
-        else:
-            predicted_winner = team2 if first_inning.get("batting_team") == team1 else team1
 
     # Build message
     message = f"🏏 *{team1} vs {team2}*\n"
     message += f"🎯 Toss Winner: {toss_winner}\n"
-    if overs > 0:
-        message += f"1️⃣ First Inning: {runs}/{wickets} in {overs} overs\n"
-        message += f"Run Rate: {run_rate:.2f}\n"
+    if f_overs > 0:
+        message += f"1️⃣ First Inning: {f_runs}/{f_wickets} in {f_overs} overs\n"
+        message += f"Run Rate: {f_rr:.2f}\n"
+    if s_overs > 0:
+        message += f"2️⃣ Second Inning: {s_runs}/{s_wickets} in {s_overs} overs\n"
+        message += f"Run Rate: {s_rr:.2f}\n"
     message += f"💡 Predicted Winner: *{predicted_winner}*\n"
     message += f"📊 Confidence: *{confidence}%*"
 
     return match_id, message
 
-# ----------- Send Telegram -----------
+# ----------- Send to Telegram -----------
 def send_message(msg):
     try:
         bot.send_message(chat_id=CHANNEL_ID, text=msg, parse_mode="Markdown")
