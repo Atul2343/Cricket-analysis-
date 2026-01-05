@@ -1,9 +1,7 @@
-name: Ultimate Cricket AI Bot
+name: Cricket AI Bot
 
 on:
-  workflow_dispatch: # Manual trigger if needed
-  schedule:
-    - cron: '0 */2 * * *'  # every 2 hours
+  workflow_dispatch: # Manual trigger only
 
 jobs:
   run-bot:
