@@ -1,33 +1,54 @@
-import requests
-from bs4 import BeautifulSoup
-from scraper.filters import is_relevant
+import os
 import json
-from datetime import date
+from datetime import date, datetime
 
-# Example public cricket sites (replace with real ones)
-SOURCES = [
-    "https://www.cricbuzz.com/cricket-match-schedule",
-    "https://www.espncricinfo.com/ci/engine/match/index.html"
-]
 
 def scrape_matches():
-    matches = []
+    """
+    Daily cricket matches + basic analysis
+    No API, No AI
+    Safe for GitHub Actions
+    """
 
-    for url in SOURCES:
-        try:
-            r = requests.get(url, timeout=10)
-            soup = BeautifulSoup(r.text, "html.parser")
-            text = soup.get_text(" ")
-
-            if is_relevant(text):
-                lines = [l.strip() for l in text.split("\n") if l.strip()]
-                matches.extend(lines[:10])  # top 10 matches only
-        except:
-            continue
-
-    # Save to JSON
+    # 🔹 Aaj ki date
     today = date.today().isoformat()
-    with open(f"data/{today}_matches.json", "w", encoding="utf-8") as f:
-        json.dump(matches, f, ensure_ascii=False, indent=2)
+    now_time = datetime.now().strftime("%H:%M")
 
-    return matches
+    # 🔹 data folder auto-create
+    os.makedirs("data", exist_ok=True)
+
+    # 🔹 DEMO DATA (abhi static hai, baad me real scraping add karenge)
+    matches = [
+        {
+            "match": "India vs Australia",
+            "format": "ODI",
+            "time": "02:00 PM IST",
+            "ground": "Mumbai",
+            "analysis": "High-scoring match expected. Toss will be important."
+        },
+        {
+            "match": "Pakistan vs South Africa",
+            "format": "T20",
+            "time": "07:30 PM IST",
+            "ground": "Lahore",
+            "analysis": "Spinners may dominate in middle overs."
+        }
+    ]
+
+    report = {
+        "date": today,
+        "generated_at": now_time,
+        "total_matches": len(matches),
+        "matches": matches
+    }
+
+    # 🔹 File path
+    file_path = f"data/{today}_matches.json"
+
+    # 🔹 Save JSON
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    print(f"✅ Match data saved: {file_path}")
+
+    return report
