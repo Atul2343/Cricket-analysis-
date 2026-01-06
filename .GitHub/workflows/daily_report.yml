@@ -2,8 +2,8 @@ name: Daily Cricket Report
 
 on:
   schedule:
-    - cron: "0 0 * * *"  # daily 12 AM UTC
-  workflow_dispatch:      # manual run button bhi aayega
+    - cron: "0 0 * * *"   # daily 12 AM UTC
+  workflow_dispatch:     # manual Run button ke liye
 
 jobs:
   run-bot:
