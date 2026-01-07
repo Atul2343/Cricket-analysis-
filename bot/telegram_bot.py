@@ -1,24 +1,20 @@
 import os
-import json
+import asyncio
 from telegram import Bot
-from bot.formatter import generate_report
-from datetime import date
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = os.getenv("CHANNEL_ID")
+CHANNEL_ID = os.getenv("CHAT_ID")
 
-def send_daily_report():
-    today = date.today().isoformat()
-    try:
-        with open(f"data/{today}_matches.json", "r", encoding="utf-8") as f:
-            matches = json.load(f)
-    except FileNotFoundError:
-        matches = []
+async def _send_daily_report(report: str):
+    bot = Bot(token=BOT_TOKEN)
+    await bot.send_message(
+        chat_id=CHANNEL_ID,
+        text=report
+    )
 
-    if matches:
-        bot = Bot(BOT_TOKEN)
-        report = generate_report(matches)
-       await bot.send_message(chat_id=CHANNEL_ID, text=report)
-        print("✅ Report sent successfully!")
-    else:
-        print("⚠️ No matches found today.")
+def send_daily_report(report: str):
+    """
+    Sync wrapper so GitHub Actions / normal Python
+    can call async telegram code safely
+    """
+    asyncio.run(_send_daily_report(report))
