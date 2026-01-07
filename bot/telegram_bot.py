@@ -18,7 +18,7 @@ def send_daily_report():
     if matches:
         bot = Bot(BOT_TOKEN)
         report = generate_report(matches)
-        bot.send_message(chat_id=CHANNEL_ID, text=report)
+       await bot.send_message(chat_id=CHANNEL_ID, text=report)
         print("✅ Report sent successfully!")
     else:
         print("⚠️ No matches found today.")
