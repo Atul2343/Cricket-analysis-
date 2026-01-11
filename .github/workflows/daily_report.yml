@@ -2,8 +2,8 @@ name: Daily Cricket Report
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # daily 12 AM UTC
-  workflow_dispatch:     # manual Run button ke liye
+    - cron: "0 0 * * *"  # daily 12 AM UTC
+  workflow_dispatch:       # manual run ke liye
 
 jobs:
   run-bot:
@@ -26,6 +26,5 @@ jobs:
       - name: Run Bot
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
-        run: |
-          python main.py
+          CHAT_ID: ${{ secrets.CHAT_ID }}   # <-- yahi variable ka naam
+        run: python telegram_bot.py
